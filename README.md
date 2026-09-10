@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Borrower Copilot
 
-## Getting Started
+A borrower's own pre-lender self-assessment. No login, no bureau pull, nothing stored — the borrower answers questions about their own situation and gets four things back: whether they should borrow at all, how much (a lender's likely sanction *and* what's actually safe — these are usually different), a fair interest rate band with an honest all-in APR, and an EMI ceiling with a stress test — plus a one-page Negotiation Card to take into a branch.
 
-First, run the development server:
+Built for the Lokta Borrower Copilot Build Challenge.
+
+## Run it locally
+
+Requires Node.js 18+.
 
 ```bash
+git clone https://github.com/govind-sing/borrower-copilot
+cd borrower-copilot
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). No environment variables, no backend, no database — everything runs client-side in the browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What's in this repo
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| File | What it is |
+|---|---|
+| `RULES.md` | Every threshold, band, and default used by the engine, with the reasoning and source behind each one. Read this to understand *why* any number comes out the way it does. |
+| `RUN_THROUGHS.md` | Priya, Ravi, and Anita run through the actual app — answers given, what the engine derived, the four outputs, and the resulting Negotiation Card for each. |
+| `src/rules/` | Pure calculation functions — FOIR, multiplier method, CIBIL-tier rate bands, APR, safe-capacity, and the borrow/don't-borrow verdict. No UI code, no React, nothing here reads from a form. |
+| `src/engine/` | The question set (`questions.ts`, with which output each question is designed to move), the logic that turns raw answers into what the rules functions need (`deriveInputs.ts`), the four-output orchestrator (`orchestrator.ts`), and the confidence/ink-vs-pencil signal (`confidence.ts`). |
+| `src/components/` | Two small presentational components — an output line-entry and the Negotiation Card. |
+| `src/app/` | The Next.js page, layout, fonts, and global styles. |
 
-## Learn More
+## Design approach
 
-To learn more about Next.js, take a look at the following resources:
+Rules are deliberately separated from the UI — every number and its justification lives in `src/rules/` or `src/engine/`, and the page in `src/app/page.tsx` only renders what those modules hand back. This was a specific choice so that changing a rule (e.g. in a live follow-up) means editing one function, not hunting through JSX.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The visual design is built around a passbook/ledger metaphor — the idea that this is the borrower's own record, not the bank's. One functional consequence of that: confidence is shown as a literal visual property (solid "ink" for a well-supported number, lighter "pencil" for one still resting on wide-band defaults) rather than as a separate caption or badge.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Known limitations
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See the "Explicit limitations" section at the end of `RULES.md` for the full list — notably: an unanswered "have you missed a payment" question is currently treated as no-bounce rather than a partial penalty, the processing fee used in the APR calculation (2%) is illustrative rather than sourced from a real lender quote, and the stress test models a flat income drop only, not a rate-rise scenario.
