@@ -189,3 +189,30 @@ p.lede {
   color: var(--ink-soft);
 }
 .assumptions summary { cursor: pointer; color: var(--stamp); }
+
+
+.tenure-note {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 1rem 0 0.3rem;
+}
+
+.tenure-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+.tenure-table th,
+.tenure-table td {
+  text-align: right;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--rule);
+}
+.tenure-table th:first-child,
+.tenure-table td:first-child {
+  text-align: left;
+  font-family: var(--font-body), sans-serif;
+}
+.tenure-table td.warn { color: var(--flag); }

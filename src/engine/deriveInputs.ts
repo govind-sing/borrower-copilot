@@ -71,6 +71,16 @@ export function deriveInputs(a: Answers): DerivedContext {
     assumptions.push("Household income includes spouse/partner income (discounted 20% on the safe side).");
   }
 
+  if (a.isProductiveLoan && a.expectedMonthlyUplift) {
+  const discountedUplift = a.expectedMonthlyUplift * 0.5;
+  safeIncome += discountedUplift;
+  assumptions.push(
+    `Loan marked as productive — added 50% of your claimed ₹${a.expectedMonthlyUplift.toLocaleString(
+      "en-IN"
+    )}/mo expected uplift to your safe-side income, since this isn't verified.`
+  );
+}
+
   // ---- Existing high-cost debt & its EMI ----
   let totalExistingEMIs = existingEMIsTotal;
   let hasHighCostDebt = false;

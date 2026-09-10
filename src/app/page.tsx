@@ -53,7 +53,10 @@ function Field({
     return (
       <div className="field">
         <label>{q.label}</label>
-        <select value={(value as string) ?? ""} onChange={(e) => onChange(q.id as string, e.target.value || null)}>
+        <select
+          value={(value as string) ?? ""}
+          onChange={(e) => onChange(q.id as string, e.target.value || null)}
+        >
           <option value="">— select —</option>
           {q.options?.map((o) => (
             <option key={o.value} value={o.value}>
@@ -73,7 +76,14 @@ function Field({
         value={(value as string | number) ?? ""}
         placeholder="skip if not sure"
         onChange={(e) =>
-          onChange(q.id as string, q.type === "number" ? (e.target.value === "" ? null : Number(e.target.value)) : e.target.value)
+          onChange(
+            q.id as string,
+            q.type === "number"
+              ? e.target.value === ""
+                ? null
+                : Number(e.target.value)
+              : e.target.value,
+          )
         }
       />
     </div>
@@ -84,15 +94,22 @@ export default function Home() {
   const [answers, setAnswers] = useState<Answers>(emptyAnswers);
   const [showResults, setShowResults] = useState(false);
 
-  const employmentType = (answers.employmentType ?? null) as EmploymentType | null;
+  const employmentType = (answers.employmentType ??
+    null) as EmploymentType | null;
 
-  const mustQuestions = useMemo(() => QUESTIONS.filter((q) => q.tier === "must"), []);
+  const mustQuestions = useMemo(
+    () => QUESTIONS.filter((q) => q.tier === "must"),
+    [],
+  );
   const additionalQuestions = useMemo(
     () =>
       QUESTIONS.filter(
-        (q) => q.tier === "additional" && (!q.appliesTo || (employmentType && q.appliesTo.includes(employmentType)))
+        (q) =>
+          q.tier === "additional" &&
+          (!q.appliesTo ||
+            (employmentType && q.appliesTo.includes(employmentType))),
       ),
-    [employmentType]
+    [employmentType],
   );
 
   function update(id: string, value: unknown) {
@@ -105,44 +122,71 @@ export default function Home() {
     answers.employmentType != null &&
     answers.netMonthlyIncome != null;
 
-  const result = useMemo(() => (showResults ? runCopilot(answers) : null), [showResults, answers]);
+  const result = useMemo(
+    () => (showResults ? runCopilot(answers) : null),
+    [showResults, answers],
+  );
 
   return (
     <main className="wrap">
       <h1>
         Borrower <em>Copilot</em>
       </h1>
-      <p className="lede">Answer what you can. Skip what you don't know — the numbers will just stay wider until you don't.</p>
+      <p className="lede">
+        Answer what you can. Skip what you don't know — the numbers will just
+        stay wider until you don't.
+      </p>
 
       <section>
         <h2>The essentials</h2>
         {mustQuestions.map((q) => (
-          <Field key={q.id as string} q={q} value={(answers as Record<string, unknown>)[q.id as string]} onChange={update} />
+          <Field
+            key={q.id as string}
+            q={q}
+            value={(answers as Record<string, unknown>)[q.id as string]}
+            onChange={update}
+          />
         ))}
       </section>
 
       {employmentType && (
         <section className="ruled">
           <h2>Tighten your numbers</h2>
-          <p className="lede" style={{ fontSize: "0.95rem", marginBottom: "1rem" }}>
+          <p
+            className="lede"
+            style={{ fontSize: "0.95rem", marginBottom: "1rem" }}
+          >
             Optional — each of these narrows a specific range. Skip freely.
           </p>
           {additionalQuestions.map((q) => (
-            <Field key={q.id as string} q={q} value={(answers as Record<string, unknown>)[q.id as string]} onChange={update} />
+            <Field
+              key={q.id as string}
+              q={q}
+              value={(answers as Record<string, unknown>)[q.id as string]}
+              onChange={update}
+            />
           ))}
         </section>
       )}
 
-      <button className="calc-btn" disabled={!canCalculate} onClick={() => setShowResults(true)}>
+      <button
+        className="calc-btn"
+        disabled={!canCalculate}
+        onClick={() => setShowResults(true)}
+      >
         Open my passbook
       </button>
 
       {result && (
         <section className="ruled">
-          <div className={`verdict-stamp ${result.verdict.call === "DON'T BORROW" ? "flag" : ""}`}>
+          <div
+            className={`verdict-stamp ${result.verdict.call === "DON'T BORROW" ? "flag" : ""}`}
+          >
             {result.verdict.call}
           </div>
-          <p style={{ color: "var(--ink-soft)", fontSize: "0.9rem" }}>{result.verdict.why}</p>
+          <p style={{ color: "var(--ink-soft)", fontSize: "0.9rem" }}>
+            {result.verdict.why}
+          </p>
 
           <OutputEntry
             serial="O2·L"
@@ -175,11 +219,44 @@ export default function Home() {
             confidence={confidenceFor("O4", answers)}
           />
 
+          {result.tenureOptions.length > 0 && (
+            <>
+              <p className="tenure-note">
+                Tenure trade-off at ₹
+                {result.requestedAmount.toLocaleString("en-IN")}:
+              </p>
+              <table className="tenure-table">
+                <thead>
+                  <tr>
+                    <th>Tenure</th>
+                    <th>EMI</th>
+                    <th>vs. your safe EMI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.tenureOptions.map((t) => (
+                    <tr key={t.months}>
+                      <td>{t.months} months</td>
+                      <td>₹{t.emi.toLocaleString("en-IN")}/mo</td>
+                      <td className={t.withinSafe ? "" : "warn"}>
+                        {t.withinSafe
+                          ? "within safe range"
+                          : "exceeds safe range"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+
           <NegotiationCard lines={result.negotiationCard} />
 
           {result.assumptions.length > 0 && (
             <details className="assumptions">
-              <summary>What this is guessing ({result.assumptions.length})</summary>
+              <summary>
+                What this is guessing ({result.assumptions.length})
+              </summary>
               <ul>
                 {result.assumptions.map((a, i) => (
                   <li key={i}>{a}</li>
